@@ -1,5 +1,8 @@
-﻿Invoke-WebRequest -uri http://www.chp.gov.hk/files/misc/enhanced_sur_covid_19_eng.csv -OutFile enhanced_sur_covid_19_eng.csv
-$CSV = (gc enhanced_sur_covid_19_eng.csv)|ConvertFrom-Csv|select
+﻿$URL="http://www.chp.gov.hk/files/misc/enhanced_sur_covid_19_eng.csv"
+$FILE=$URL.Split("/")[5]
+
+Invoke-WebRequest -uri $URL -OutFile $FILE
+$CSV = (gc $FILE)|ConvertFrom-Csv
 $CSV2=$CSV|select @{Name="Case";Expression = {[int]$_."Case no."}},
     @{Name="D_Report";Expression = {$_."Report date" -as [datetime]}},
     @{Name="D_Onset";Expression = {$_."Date of onset" -as [datetime]}},
