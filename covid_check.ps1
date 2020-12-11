@@ -17,8 +17,42 @@ $CSV2=$CSV|select @{Name="Case";Expression = {[int]$_."Case no."}},
 
 $CSV|gm
 $TOT=($CSV2).count
+$AG_MAX=($CSV2 | ForEach-Object {$_.AG}|measure -max).Maximum
 
 $CSV2|select -Last 10|ft
+
+"Status: ",
+    (($CSV2|where "Status" -EQ "To be provided").count),"(To be provided) | ",
+    (($CSV2|where "Status" -EQ "Hospitalised").count),"(Hospitalised) | ",
+    (($CSV2|where "Status" -EQ "Discharged").count),"(Discharged) | ",
+    (($CSV2|where "Status" -EQ "Deceased").count),"(Deceased) / ",
+    $TOT -join ' '
+"Hospitalized:",
+    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").count),"(Imported) /",
+    (($CSV2|where "Status" -EQ "Hospitalised").count) -join ' '
+"Gender: ",
+    (($CSV2|where Gender -EQ "M").count),"(M) | ",
+    (($CSV2|where Gender -EQ "F").count),"(F)" -join ' '
+"Residency: ",
+    (($CSV2|where Residency -EQ "HK resident").count),"(Local) | ",
+    (($CSV2|where Residency -EQ "Non-HK resident").count),"(Non-HK)" -join ' '
+"Class: ",
+    (($CSV2|where Class -EQ "Imported case").count),"(Imported) | ",
+    (($CSV2|where Class -EQ "Local case").count),"(Local) | ",
+    (($CSV2|where Class -EQ "Epidemiologically linked with local case").count),"(Linked) " -join ' '
+$AG_Str="Age Group: "
+for ($num = 0 ; $num -le $AG_MAX ; $num+=10)
+{
+	$AG_Str += (($CSV2|where AG -EQ $num).count)," (",$num,"s)| " -join ''
+}
+$AG_Str
+
+$AGP_Str="Age Group: "
+for ($num = 0 ; $num -le $AG_MAX ; $num+=10)
+{
+	$AGP_Str += (($CSV2|where AG -EQ $num).count/$TOT).tostring("P")," (",$num,"s) | " -join ''
+}
+$AGP_Str
 
 "Last 7 Days:",
     (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-7)).count),"(Imported) /",
@@ -26,39 +60,8 @@ $CSV2|select -Last 10|ft
 "Last 2 Days:",
     (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-2)).count),"(Imported) /",
     (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-2)).count) -join ' '
-"Hospitalized:",
-    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").count),"(Imported) /",
-    (($CSV2|where "Status" -EQ "Hospitalised").count) -join ' '
-"Status: ",
-    (($CSV2|where "Status" -EQ "To be provided").count),"(To be provided) | ",
-    (($CSV2|where "Status" -EQ "Hospitalised").count),"(Hospitalised) | ",
-    (($CSV2|where "Status" -EQ "Discharged").count),"(Discharged) | ",
-    (($CSV2|where "Status" -EQ "Deceased").count),"(Deceased)" -join ' '
-"Gender: ",
-    (($CSV2|where Gender -EQ "M").count),"(M) | ",
-    (($CSV2|where Gender -EQ "F").count),"(F)" -join ' '
-$AG_Str="Age Group: "
-for ($num = 0 ; $num -le 100 ; $num+=10)
-{
-	$AG_Str += (($CSV2|where AG -EQ $num).count)," (",$num,"s)| " -join ''
-}
-$AG_Str
-$AGP_Str="Age Group: "
-for ($num = 0 ; $num -le 100 ; $num+=10)
-{
-	$AGP_Str += (($CSV2|where AG -EQ $num).count/$TOT).tostring("P")," (",$num,"s) | " -join ''
-}
-$AGP_Str
-"Residency: ",
-    (($CSV2|where Residency -EQ "HK resident").count),"(Local) | ",
-    (($CSV2|where Residency -EQ "Non-HK resident").count),"(Non-HK)" -join ' '
-"Class: ",
-    (($CSV2|where Class -EQ "Imported case").count),"(Imported) | ",
-    (($CSV2|where Class -EQ "Local case").count),"(Local) | ",
-    (($CSV2|where Class -EQ "Epidemiologically linked with local case").count),"(Linked) /",
-    $TOT -join ' '
 
-
+#Stats for all Cases beyond 30days
 $D_30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
 $T30=$D_30.count
 "D-30 Status: ",
@@ -68,12 +71,14 @@ $T30=$D_30.count
     (($D_30|where "Status" -EQ "Deceased").count/$T30).tostring("P"),"(Deceased) / ",
     $T30 -join ' '
 
+#Stats for all Cases within last 14 days
 $D14=$CSV2|where "D_Report" -GE (Get-Date).AddDays(-14)
 $T14=$D14.count
-$D14A_Str="D14 AgeGroup: "
+$D14_AG_MAX=($D14 | ForEach-Object {$_.AG}|measure -max).Maximum
+$D14A_Str="D14 AG: "
 $D14A_HEADER=@()
 $D14A_DATA=@()
-for ($num = 0 ; $num -le 100 ; $num+=10)
+for ($num = 0 ; $num -le $D14_AG_MAX ; $num+=10)
 {
 	$D14A_Str += (($D14|where AG -EQ $num).count/$T14).tostring("P")," (",$num,"s)| " -join ''
 	$D14A_HEADER += $num,"s" -join ""
