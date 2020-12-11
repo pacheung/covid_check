@@ -16,73 +16,73 @@ $CSV2=$CSV|select @{Name="Case";Expression = {[int]$_."Case no."}},
 
 
 $CSV|gm
-$TOT=($CSV2).count
+$TOT=($CSV2).Count+1
 $AG_MAX=($CSV2 | ForEach-Object {$_.AG}|measure -max).Maximum
 
 $CSV2|select -Last 10|ft
 
+"Last 2 Days:",
+    (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-2)).Count+1),"(Imported) /",
+    (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-2)).Count+1) -join ' '
+"Last 7 Days:",
+    (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-7)).Count+1),"(Imported) /",
+    (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-7)).Count+1) -join ' '
 "Status: ",
-    (($CSV2|where "Status" -EQ "To be provided").count),"(To be provided) | ",
-    (($CSV2|where "Status" -EQ "Hospitalised").count),"(Hospitalised) | ",
-    (($CSV2|where "Status" -EQ "Discharged").count),"(Discharged) | ",
-    (($CSV2|where "Status" -EQ "Deceased").count),"(Deceased) / ",
+    (($CSV2|where "Status" -EQ "To be provided").Count+1),"(To be provided) | ",
+    (($CSV2|where "Status" -EQ "Hospitalised").Count+1),"(Hospitalised) | ",
+    (($CSV2|where "Status" -EQ "Discharged").Count+1),"(Discharged) | ",
+    (($CSV2|where "Status" -EQ "Deceased").Count+1),"(Deceased) / ",
     $TOT -join ' '
 "Hospitalized:",
-    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").count),"(Imported) /",
-    (($CSV2|where "Status" -EQ "Hospitalised").count) -join ' '
+    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").Count+1),"(Imported) /",
+    (($CSV2|where "Status" -EQ "Hospitalised").Count+1) -join ' '
 "Gender: ",
-    (($CSV2|where Gender -EQ "M").count),"(M) | ",
-    (($CSV2|where Gender -EQ "F").count),"(F)" -join ' '
+    (($CSV2|where Gender -EQ "M").Count+1),"(M) | ",
+    (($CSV2|where Gender -EQ "F").Count+1),"(F)" -join ' '
 "Residency: ",
-    (($CSV2|where Residency -EQ "HK resident").count),"(Local) | ",
-    (($CSV2|where Residency -EQ "Non-HK resident").count),"(Non-HK)" -join ' '
+    (($CSV2|where Residency -EQ "HK resident").Count+1),"(Local) | ",
+    (($CSV2|where Residency -EQ "Non-HK resident").Count+1),"(Non-HK)" -join ' '
 "Class: ",
-    (($CSV2|where Class -EQ "Imported case").count),"(Imported) | ",
-    (($CSV2|where Class -EQ "Local case").count),"(Local) | ",
-    (($CSV2|where Class -EQ "Epidemiologically linked with local case").count),"(Linked) " -join ' '
+    (($CSV2|where Class -EQ "Imported case").Count+1),"(Imported) | ",
+    (($CSV2|where Class -EQ "Local case").Count+1),"(Local) | ",
+    (($CSV2|where Class -EQ "Epidemiologically linked with local case").Count+1),"(Linked) " -join ' '
 $AG_Str="Age Group: "
 for ($num = 0 ; $num -le $AG_MAX ; $num+=10)
 {
-	$AG_Str += (($CSV2|where AG -EQ $num).count)," (",$num,"s)| " -join ''
+	$AG_Str += (($CSV2|where AG -EQ $num).Count+1)," (",$num,"s)| " -join ''
 }
 $AG_Str
 
 $AGP_Str="Age Group: "
 for ($num = 0 ; $num -le $AG_MAX ; $num+=10)
 {
-	$AGP_Str += (($CSV2|where AG -EQ $num).count/$TOT).tostring("P")," (",$num,"s) | " -join ''
+	$AGP_Str += ((($CSV2|where AG -EQ $num).Count+1)/$TOT).tostring("P")," (",$num,"s) | " -join ''
 }
 $AGP_Str
 
-"Last 7 Days:",
-    (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-7)).count),"(Imported) /",
-    (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-7)).count) -join ' '
-"Last 2 Days:",
-    (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-2)).count),"(Imported) /",
-    (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-2)).count) -join ' '
 
 #Stats for all Cases beyond 30days
 $D_30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
-$T30=$D_30.count
+$T30=$D_30.Count+1
 "D-30 Status: ",
-    (($D_30|where "Status" -EQ "To be provided").count/$T30).tostring("P"),"(To be provided) | ",
-    (($D_30|where "Status" -EQ "Hospitalised").count/$T30).tostring("P"),"(Hospitalised) | ",
-    (($D_30|where "Status" -EQ "Discharged").count/$T30).tostring("P"),"(Discharged) | ",
-    (($D_30|where "Status" -EQ "Deceased").count/$T30).tostring("P"),"(Deceased) / ",
+    ((($D_30|where "Status" -EQ "To be provided").Count+1)/$T30).tostring("P"),"(To be provided) | ",
+    ((($D_30|where "Status" -EQ "Hospitalised").Count+1)/$T30).tostring("P"),"(Hospitalised) | ",
+    ((($D_30|where "Status" -EQ "Discharged").Count+1)/$T30).tostring("P"),"(Discharged) | ",
+    ((($D_30|where "Status" -EQ "Deceased").Count+1)/$T30).tostring("P"),"(Deceased) / ",
     $T30 -join ' '
 
 #Stats for all Cases within last 14 days
 $D14=$CSV2|where "D_Report" -GE (Get-Date).AddDays(-14)
-$T14=$D14.count
+$T14=$D14.Count+1
 $D14_AG_MAX=($D14 | ForEach-Object {$_.AG}|measure -max).Maximum
 $D14A_Str="D14 AG: "
 $D14A_HEADER=@()
 $D14A_DATA=@()
 for ($num = 0 ; $num -le $D14_AG_MAX ; $num+=10)
 {
-	$D14A_Str += (($D14|where AG -EQ $num).count/$T14).tostring("P")," (",$num,"s)| " -join ''
+	$D14A_Str += ((($D14|where AG -EQ $num).Count+1)/$T14).tostring("P")," (",$num,"s)| " -join ''
 	$D14A_HEADER += $num,"s" -join ""
-	$D14A_DATA += (($D14|where AG -EQ $num).count)
+	$D14A_DATA += (($D14|where AG -EQ $num).Count+1)
 }
 $D14A_Str += $T14," [TOTAL]" -join ''
 $D14A_Str
