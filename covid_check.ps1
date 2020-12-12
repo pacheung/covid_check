@@ -61,15 +61,6 @@ for ($num = 0 ; $num -le $AG_MAX ; $num+=10)
 $AGP_Str
 
 
-#Stats for all Cases beyond 30days
-$D_30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
-$T30=$D_30.Count+1
-"D-30 Status: ",
-    ((($D_30|where "Status" -EQ "To be provided").Count+1)/$T30).tostring("P"),"(To be provided) | ",
-    ((($D_30|where "Status" -EQ "Hospitalised").Count+1)/$T30).tostring("P"),"(Hospitalised) | ",
-    ((($D_30|where "Status" -EQ "Discharged").Count+1)/$T30).tostring("P"),"(Discharged) | ",
-    ((($D_30|where "Status" -EQ "Deceased").Count+1)/$T30).tostring("P"),"(Deceased) / ",
-    $T30 -join ' '
 
 #Stats for all Cases within last 14 days
 $D14=$CSV2|where "D_Report" -GE (Get-Date).AddDays(-14)
@@ -89,8 +80,6 @@ $D14A_Str
 
 #Testing for creating chart
 [void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms.DataVisualization")
-
-
 $D14_AG_Chart = New-object System.Windows.Forms.DataVisualization.Charting.Chart
 $D14_AG_Chart.Width = 800
 $D14_AG_Chart.Height = 400
@@ -105,8 +94,36 @@ $chartarea.Name = "ChartArea1"
 $D14_AG_Chart.ChartAreas.Add($chartarea)
 			  
 [void]$D14_AG_Chart.Series.Add("data1")
-		   
 $D14_AG_Chart.Series["data1"].ChartType = [System.Windows.Forms.DataVisualization.Charting.SeriesChartType]::Doughnut
 $D14_AG_Chart.Series["data1"].Points.DataBindXY($D14A_HEADER, $D14A_DATA)
 $D14_AG_Chart.SaveImage("$PWD\D14_AG_Chart.png","png")
 start "$PWD\D14_AG_Chart.png"
+
+#Stats for all Cases beyond 30days
+$D30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
+$T30=$D30.Count+1
+"D-30 Status: ",
+    ((($D30|where "Status" -EQ "To be provided").Count+1)/$T30).tostring("P"),"(To be provided) | ",
+    ((($D30|where "Status" -EQ "Hospitalised").Count+1)/$T30).tostring("P"),"(Hospitalised) | ",
+    ((($D30|where "Status" -EQ "Discharged").Count+1)/$T30).tostring("P"),"(Discharged) | ",
+    ((($D30|where "Status" -EQ "Deceased").Count+1)/$T30).tostring("P"),"(Deceased) / ",
+    $T30 -join ' '
+
+$D30D = ($D30|where Status -eq "Deceased"|select "Case","AG")
+$D30D_MIN = ($D30D|ForEach-Object {$_.AG}|measure -min).Minimum
+$D30D_MAX = ($D30D|ForEach-Object {$_.AG}|measure -max).Maximum
+
+$D30A_Str="D30 AG Death Rate: "
+$D30A_HEADER=@()
+$D30A_DATA=@()
+#for ($num = $D30D_MIN ; $num -le $D_30D_MAX ; $num+=10)
+for ($num = $D30D_MIN ; $num -le $D30D_MAX ; $num+=10)
+{
+	$D30A_HEADER += $num,"s" -join ""
+	$D30A_DATA += ((($D30D|where AG -EQ $num).Count+1)/(($D30|where AG -EQ $num).Count+1)).tostring("P")
+    $D30A_Str += ((($D30D|where AG -EQ $num).Count+1)/(($D30|where AG -EQ $num).Count+1)).tostring("P"),"(",$num,"s) |" -join ''
+}
+$D30A_HEADER
+$D30A_DATA
+$D30A_Str
+
