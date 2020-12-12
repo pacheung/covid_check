@@ -1,8 +1,9 @@
 ﻿cd $HOME\repo\covid_check
-$URL="http://www.chp.gov.hk/files/misc/enhanced_sur_covid_19_eng.csv"
+$URL="http://www.chp.gov.hk/files/misc/enhanced_sur_covid_19_eng.csv" #Confirmed/Suspected Cases
+$URL2="http://www.chp.gov.hk/files/misc/building_list_eng.csv" #Building List
+$URL3="http://www.chp.gov.hk/files/misc/large_clusters_eng.csv" #Top Cluster 10+
 $FILE=$URL.Split("/")[5]
-$URL2="http://www.chp.gov.hk/files/misc/building_list_eng.csv"
-$FILE2=$URL2.Split("/")[5]
+
 
 Invoke-WebRequest -uri $URL -OutFile $FILE
 $CSV = (gc $FILE)|ConvertFrom-Csv
@@ -16,11 +17,14 @@ $CSV2=$CSV|select @{Name="Case";Expression = {[int]$_."Case no."}},
     @{Name="Residency";Expression = {$_."HK/Non-HK resident"}},
     @{Name="Class";Expression = {$_."Case classification*"}},
     @{Name="Confirmed";Expression = {$_."Confirmed/probable"}}
+#Building involved
 $BLDG=curl -uri $URL2|ConvertFrom-Csv|select District,
     @{Name="BLDG";Expression = {$_."Building name"}},
     @{Name="Last_Visit";Expression = {$_."Last date of residence of the case(s)" -as [datetime]}},
-    @{Name="Related";Expression = {$_."Related probable/confirmed cases" -as [datetime]}}
+    @{Name="Related";Expression = {$_."Related probable/confirmed cases"}}
 $B14=$BLDG|where Last_Visit -GE (Get-Date).AddDays(-14)
+#Top cluster
+$CLU=curl -uri $URL3|ConvertFrom-Csv|select Cluster,@{Name="NUM";Expression = {[int]$_."Number of cases"}},@{Name="Involved";Expression = {$_."Involved case number"}}|sort NUM -Descending
 
 $CSV|gm
 $TOT=($CSV2).Count
@@ -116,6 +120,12 @@ $D14_AG_Chart.Series["data1"].Points.DataBindXY($D14A_HEADER, $D14A_DATA)
 $D14_AG_Chart.SaveImage("$PWD\D14_AG_Chart.png","png")
 start "$PWD\D14_AG_Chart.png"
 
+$D14B=$D14|select Case,D_Report,D_Onset,
+    @{Name="District";Expression = {($BLDG|where Related -Contains $_."Case").District}},
+    @{Name="BLDG";Expression = {if ($_.Class -NE "Imported case") {($BLDG|where Related -Contains $_.Case).BLDG}}},
+    Gender,Age,AG,Status,Residency,Class
+$D14B|where BLDG -Like "*Shun Tin*"|ft
+
 #Stats for all Cases beyond 30days
 $D30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
 $T30=$D30.Count
@@ -148,3 +158,6 @@ for ($num = $D30D_MIN ; $num -le $D30D_MAX ; $num+=10)
 	}
 }
 $D30A_Str
+
+#Top 5 Clusters
+$CLU|select -First 5|ft
