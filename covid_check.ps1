@@ -40,25 +40,29 @@ $CSV2|select -Last 10|ft
     (($CSV2|where Class -EQ "Imported case"|where "D_Report" -GE (Get-Date).AddDays(-7)).Count),"(Imported) /",
     (($CSV2|where "D_Report" -GE (Get-Date).AddDays(-7)).Count) -join ' '
 "Status: ",
-    (($CSV2|where "Status" -EQ "To be provided").Count),"(To be provided) | ",
-    (($CSV2|where "Status" -EQ "Pending admission").Count),"(Pending admission) | ",
-    (($CSV2|where "Status" -EQ "Hospitalised").Count),"(Hospitalised) | ",
-    (($CSV2|where "Status" -EQ "Discharged").Count),"(Discharged) | ",
-    (($CSV2|where "Status" -EQ "Deceased").Count),"(Deceased) / ",
+    (($CSV2|where Status -EQ "To be provided").Count),"(",(($CSV2|where Status -EQ "To be provided").Count/$TOT).tostring("P"),") (To be provided) | ",
+    (($CSV2|where Status -EQ "Pending admission").Count),"(",(($CSV2|where Status -EQ "Pending admission").Count/$TOT).tostring("P"),") (Pending admission) | ",
+    (($CSV2|where Status -EQ "Hospitalised").Count),"(",(($CSV2|where Status -EQ "Hospitalised").Count/$TOT).tostring("P"),") (Hospitalised) | ",
+    (($CSV2|where Status -EQ "Discharged").Count),"(",(($CSV2|where Status -EQ "Discharged").Count/$TOT).tostring("P"),") (Discharged) | ",
+    (($CSV2|where Status -EQ "Deceased").Count),"(",(($CSV2|where Status -EQ "Deceased").Count/$TOT).tostring("P"),") (Deceased) / ",
     $TOT -join ' '
-"Hospitalized:",
-    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").Count),"(Imported) /",
-    (($CSV2|where "Status" -EQ "Hospitalised").Count) -join ' '
+#"Hospitalized:",
+#    (($CSV2|where Class -EQ "Imported case"|where "Status" -EQ "Hospitalised").Count),"(Imported) /",
+#    (($CSV2|where "Status" -EQ "Hospitalised").Count) -join ' '
 "Gender: ",
-    (($CSV2|where Gender -EQ "M").Count),"(M) | ",
-    (($CSV2|where Gender -EQ "F").Count),"(F)" -join ' '
+    (($CSV2|where Gender -EQ "M").Count),"(",(($CSV2|where Gender -EQ "M").Count/$TOT).tostring("P"),") (M) | ",
+    (($CSV2|where Gender -EQ "F").Count),"(",(($CSV2|where Gender -EQ "F").Count/$TOT).tostring("P"),") (F)" -join ' '
 "Residency: ",
-    (($CSV2|where Residency -EQ "HK resident").Count),"(Local) | ",
-    (($CSV2|where Residency -EQ "Non-HK resident").Count),"(Non-HK)" -join ' '
+    (($CSV2|where Residency -EQ "HK resident").Count),"(",(($CSV2|where Residency -EQ "HK resident").Count/$TOT).tostring("P"),") (Local) | ",
+    (($CSV2|where Residency -EQ "Non-HK resident").Count),"(",(($CSV2|where Residency -EQ "Non-HK resident").Count/$TOT).tostring("P"),") (Non-HK)" -join ' '
 "Class: ",
-    (($CSV2|where Class -EQ "Imported case").Count),"(Imported) | ",
-    (($CSV2|where Class -EQ "Local case").Count),"(Local) | ",
-    (($CSV2|where Class -EQ "Epidemiologically linked with local case").Count),"(Linked) " -join ' '
+    (($CSV2|where Class -EQ "Imported case").Count),"(",(($CSV2|where Class -EQ "Imported case").Count/$TOT).tostring("P"),") (Imported) | ",
+    (($CSV2|where Class -EQ "Local case").Count),"(",(($CSV2|where Class -EQ "Local case").Count/$TOT).tostring("P"),") (Local) | ",
+    (($CSV2|where Class -EQ "Possibly Local case").Count),"(",(($CSV2|where Class -EQ "Possibly Local case").Count/$TOT).tostring("P"),") (P-Local) | ",
+    (($CSV2|where Class -EQ "Epidemiologically linked with local case").Count),"(",(($CSV2|where Class -EQ "Epidemiologically linked with local case").Count/$TOT).tostring("P"),") (Linked-L) | ",
+    (($CSV2|where Class -EQ "Epidemiologically linked with possibly local case").Count),"(",(($CSV2|where Class -EQ "Epidemiologically linked with possibly local case").Count/$TOT).tostring("P"),") (Linked-PL) | ",
+    (($CSV2|where Class -EQ "Epidemiologically linked with imported case").Count),"(",(($CSV2|where Class -EQ "Epidemiologically linked with imported case").Count/$TOT).tostring("P"),") (Linked-I) " -join ' '
+
 $AG_Str="Age Group: "
 $AGP_Str="Age Group: "
 for ($num = $AG_MIN ; $num -le $AG_MAX ; $num+=10)
@@ -118,13 +122,15 @@ $D14_AG_Chart.ChartAreas.Add($chartarea)
 $D14_AG_Chart.Series["data1"].ChartType = [System.Windows.Forms.DataVisualization.Charting.SeriesChartType]::Doughnut
 $D14_AG_Chart.Series["data1"].Points.DataBindXY($D14A_HEADER, $D14A_DATA)
 $D14_AG_Chart.SaveImage("$PWD\D14_AG_Chart.png","png")
-start "$PWD\D14_AG_Chart.png"
+#start "$PWD\D14_AG_Chart.png"
 
+date
 $D14B=$D14|select Case,D_Report,D_Onset,
     @{Name="District";Expression = {($BLDG|where Related -Contains $_."Case").District}},
     @{Name="BLDG";Expression = {if ($_.Class -NE "Imported case") {($BLDG|where Related -Contains $_.Case).BLDG}}},
     Gender,Age,AG,Status,Residency,Class
-$D14B|where BLDG -Like "*Shun Tin*"|ft
+$D14B|where BLDG -Like "*Shun Tin Estate*"|ft
+date
 
 #Stats for all Cases beyond 30days
 $D30=$CSV2|where "D_Report" -LT (Get-Date).AddDays(-30)
