@@ -80,13 +80,19 @@ for ($num = $AG_MIN ; $num -le $AG_MAX ; $num+=10)
 $AG_Str
 $AGP_Str
 
-
 #Stats for all Cases within last 14 days
 $D14=$CSV2|where "D_Report" -GE (Get-Date).AddDays(-14)
+$D14D=$D14|where Status -eq "Deceased"|select "Case","AG"
+
 $T14=$D14.Count
+$T14D=$D14D.Count
 $D14_MIN=($D14 | ForEach-Object {$_.AG}|measure -min).Minimum
 $D14_MAX=($D14 | ForEach-Object {$_.AG}|measure -max).Maximum
+$D14D_MIN=($D14D| ForEach-Object {$_.AG}|measure -min).Minimum
+$D14D_MAX=($D14D| ForEach-Object {$_.AG}|measure -max).Maximum
+
 $D14A_Str="D14 AG: "
+$D14D_Str="D14 AG Death: "
 $D14A_HEADER=@()
 $D14A_DATA=@()
 for ($num = $D14_MIN ; $num -le $D14_MAX ; $num+=10)
@@ -95,13 +101,21 @@ for ($num = $D14_MIN ; $num -le $D14_MAX ; $num+=10)
 	    if (($D14|where AG -eq $num).count -EQ $null) { $COUNTER = 1 }
 	    else { $COUNTER = ($D14|where AG -eq $num).count }
 
-	    $D14A_Str += ($COUNTER/$T14).tostring("P")," (",$num,"s)| " -join ''
+	    $D14A_Str += $COUNTER,"(",($COUNTER/$T14).tostring("P"),") (",$num,"s)| " -join ''
 	    $D14A_HEADER += $num,"s" -join ""
 	    $D14A_DATA += $COUNTER
     }
+    if (($D14D|where AG -eq $num) -ne $null) {
+	    if (($D14D|where AG -eq $num).count -EQ $null) { $COUNTER_D = 1 }
+	    else { $COUNTER_D = ($D14D|where AG -eq $num).count }
+
+	    $D14D_Str += $COUNTER_D,"(",($COUNTER_D/$COUNTER).tostring("P"),") (",$num,"s)| " -join ''
+    }
 }
 $D14A_Str += $T14," [TOTAL]" -join ''
+$D14D_Str += $T14D," [TOTAL]" -join ''
 $D14A_Str
+$D14D_Str
 
 #Testing for creating chart
 [void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms.DataVisualization")
